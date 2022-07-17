@@ -7,9 +7,9 @@ use winit::{
 
 pub async fn run(event_loop: EventLoop<()>, window: Window) {
     let size = window.inner_size();
-    let instance = wgpu::Instance::new(wgpu::Backends::VULKAN);
-    let surface = unsafe { instance.create_surface(&window) };
-    let adapter = instance
+    let instance = wgpu::Instance::new(wgpu::Backends::all()); // Creating an instance for our program that supports all mainstream apis (opengl,vulkan,metal etc)
+    let surface = unsafe { instance.create_surface(&window) }; // "unsafe" Creating a surface to render / draw our "stuffs" in winit window
+    let adapter = instance // Requesting our graphics adapter and supplying basic graphics adapter options
         .request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
             compatible_surface: Some(&surface),
@@ -18,22 +18,22 @@ pub async fn run(event_loop: EventLoop<()>, window: Window) {
         .await
         .expect("Failed to find an appropriate adapter");
 
-    let (device, queue) = adapter
+    let (device, queue) = adapter // Destructuring get to get data from the requested device
         .request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
-                features: wgpu::Features::empty(),
-                limits: wgpu::Limits::default(),
+                features: wgpu::Features::empty(), // aditional features option
+                limits: wgpu::Limits::default(),   // resource limitations options
             },
             None,
         )
         .await
         .expect("Failed to create device");
 
-    let format = surface.get_preferred_format(&adapter).unwrap();
+    let format = surface.get_preferred_format(&adapter).unwrap(); // Getting the format of surface texture that our gpu / display supports
     let mut config = wgpu::SurfaceConfiguration {
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        format: format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT, // Specefying how our texture will be used
+        format: format,                                // Specefying what format our gpu supports
         width: size.width,
         height: size.height,
         present_mode: wgpu::PresentMode::Mailbox,
@@ -44,13 +44,13 @@ pub async fn run(event_loop: EventLoop<()>, window: Window) {
     let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
         label: None,
         source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
-    });
+    }); // Plugging in the shader
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
         bind_group_layouts: &[],
         push_constant_ranges: &[],
-    });
+    }); // Pipeline layout to utilzie gpu buffer
 
     let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
@@ -65,13 +65,14 @@ pub async fn run(event_loop: EventLoop<()>, window: Window) {
             entry_point: "fs_main",
             targets: &[format.into()],
         }),
-        primitive: wgpu::PrimitiveState::default(),
+        primitive: wgpu::PrimitiveState::default(), // primitive refers to the way we interpret the vertices while converting to given shapes
         depth_stencil: None,
         multisample: wgpu::MultisampleState::default(),
         multiview: None,
-    });
+    }); // defining  creating our render pipeline
 
     event_loop.run(move |event, _, control_flow| {
+        // Basic wint window
         let _ = (&instance, &adapter, &shader, &pipeline_layout);
         *control_flow = ControlFlow::Wait;
 
